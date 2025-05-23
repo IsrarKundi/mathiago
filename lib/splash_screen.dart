@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
 import 'package:social_e_commerce/webview.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -8,36 +7,30 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  late VideoPlayerController _controller;
-  bool _videoInitialized = false;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _initializeVideoPlayer();
+    _startGifDisplay();
   }
 
-  void _initializeVideoPlayer() {
-    _controller = VideoPlayerController.asset('assets/videos/splash_video.mp4')
-      ..initialize().then((_) {
+  void _startGifDisplay() {
+    // Show loading for a moment, then display GIF
+    Future.delayed(Duration(milliseconds: 500), () {
+      if (mounted) {
         setState(() {
-          _videoInitialized = true;
+          _isLoading = false;
         });
-        _controller.play();
-        _controller.setLooping(false);
 
-        // Navigate when video ends
-        _controller.addListener(() {
-          if (_controller.value.position >= _controller.value.duration &&
-              mounted) {
+        // Navigate after GIF completes (adjust timing to match your GIF duration)
+        Future.delayed(Duration(seconds: 4), () {
+          if (mounted) {
             _navigateToWebViewPage();
           }
         });
-      }).catchError((error) {
-        print("Video initialization error: $error");
-        // Navigate if error occurs
-        _navigateToWebViewPage();
-      });
+      }
+    });
   }
 
   void _navigateToWebViewPage() {
@@ -48,22 +41,60 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _videoInitialized
-          ? Center(
-        child: AspectRatio(
-          aspectRatio: _controller.value.aspectRatio,
-          child: VideoPlayer(_controller),
+      backgroundColor: Colors.black,
+      body: _isLoading ? _buildLoadingWidget() : _buildGifWidget(),
+    );
+  }
+
+  Widget _buildLoadingWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: Colors.white),
+          SizedBox(height: 20),
+          Text(
+            'Loading...',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGifWidget() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      child: FittedBox(
+        fit: BoxFit.cover, // or BoxFit.contain if you want to see the full GIF
+        child: Image.asset(
+          'assets/pngs/splash_video.gif',
+          errorBuilder: (context, error, stackTrace) {
+            print("GIF loading error: $error");
+            // Navigate immediately if GIF fails
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _navigateToWebViewPage();
+            });
+            return Container(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              color: Colors.black,
+              child: Center(
+                child: Text(
+                  'Loading App...',
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              ),
+            );
+          },
         ),
-      )
-          : Center(child: CircularProgressIndicator()),
+      ),
     );
   }
 }

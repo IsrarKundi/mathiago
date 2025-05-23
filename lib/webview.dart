@@ -57,7 +57,7 @@ class WebViewPageState extends State<WebViewPage> {
           },
         ),
       )
-      ..loadRequest(Uri.parse('https://app.mathiago.com/thiagoingreso17/'));
+      ..loadRequest(Uri.parse('https://app.mathiago.com/'));
   }
 
   Future<void> _initConnectivity() async {
